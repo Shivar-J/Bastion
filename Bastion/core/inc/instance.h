@@ -7,7 +7,6 @@
 
 #include <vulkan/vulkan_raii.hpp>
 #include "app_info.h"
-#include "raii_glfw_window.h"
 
 namespace Bastion
 {
@@ -22,11 +21,9 @@ namespace Bastion
 
   public:
     [[nodiscard]] vk::raii::Instance& getInstance();
-    [[nodiscard]] vk::raii::SurfaceKHR& getSurface();
 
     void createInstance();
     void setupDebugMessenger();
-    void createSurface(raiiGLFWwindow& window);
 
   private:
     static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity,

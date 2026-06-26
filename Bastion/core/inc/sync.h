@@ -12,16 +12,20 @@ namespace Bastion
   class Sync
   {
   private:
-    std::vector<vk::raii::Semaphore> presentSemaphores;
-    std::vector<vk::raii::Semaphore> renderSemaphores;
-    std::vector<vk::raii::Fence> fences;
+    vk::raii::Semaphore renderFinished = nullptr;
+    vk::raii::Semaphore imageAvailable = nullptr;
+    vk::raii::Fence fence = nullptr;
+    int64_t renderFinishedHandle = 0;
+    int64_t imageAvailableHandle = 0;
 
   public:
-    [[nodiscard]] std::vector<vk::raii::Semaphore>& getPresentSemaphores();
-    [[nodiscard]] std::vector<vk::raii::Semaphore>& getRenderSemaphores();
-    [[nodiscard]] std::vector<vk::raii::Fence>& getFences();
+    [[nodiscard]] vk::raii::Semaphore& getRenderFinished();
+    [[nodiscard]] vk::raii::Semaphore& getImageAvailable();
+    [[nodiscard]] vk::raii::Fence& getFence();
+    [[nodiscard]] int64_t getRenderFinishedHandle() const;
+    [[nodiscard]] int64_t getImageAvailableHandle() const;
 
-    void createSyncObjects(vk::raii::Device& device, const std::vector<vk::Image>& images);
+    void create(vk::raii::Device& device);
     void cleanup();
   };
 } // Bastion

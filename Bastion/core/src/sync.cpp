@@ -7,39 +7,69 @@
 
 namespace Bastion
 {
-  std::vector<vk::raii::Semaphore>& Sync::getPresentSemaphores()
+#if defined(_WIN32)
+  static constexpr vk::ExternalSemaphoreHandleTypeFlagBits kSemaphoreHandleType =
+    vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueWin32;
+#else
+  static constexpr vk::ExternalSemaphoreHandleTypeFlagBits kSemaphoreHandleType =
+    vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd;
+#endif
+
+  vk::raii::Semaphore& Sync::getRenderFinished()
   {
-    return presentSemaphores;
+    return renderFinished;
   }
 
-  std::vector<vk::raii::Semaphore>& Sync::getRenderSemaphores()
+  vk::raii::Semaphore& Sync::getImageAvailable()
   {
-    return renderSemaphores;
+    return imageAvailable;
   }
 
-  std::vector<vk::raii::Fence>& Sync::getFences()
+  vk::raii::Fence& Sync::getFence()
   {
-    return fences;
+    return fence;
   }
 
-  void Sync::createSyncObjects(vk::raii::Device& device, const std::vector<vk::Image>& images)
+  int64_t Sync::getRenderFinishedHandle() const
   {
-    for (int i =  0; i < images.size(); i++)
+    return renderFinishedHandle;
+  }
+
+  int64_t Sync::getImageAvailableHandle() const
+  {
+    return imageAvailableHandle;
+  }
+
+  void Sync::create(vk::raii::Device& device)
+  {
+    auto makeExportable = [&](vk::raii::Semaphore& semaphore, int64_t& handle)
     {
-      renderSemaphores.emplace_back(device, vk::SemaphoreCreateInfo());
-    }
+      vk::ExportSemaphoreCreateInfo exportInfo(kSemaphoreHandleType);
+      vk::SemaphoreCreateInfo semaphoreInfo;
+      semaphoreInfo.setPNext(&exportInfo);
+      semaphore = vk::raii::Semaphore(device, semaphoreInfo);
 
-    for (int i = 0; i < AppInfo::maxFrameInFlight; i++)
-    {
-      presentSemaphores.emplace_back(device, vk::SemaphoreCreateInfo());
-      fences.emplace_back(device, vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
-    }
+#if defined(_WIN32)
+      vk::SemaphoreGetWin32HandleInfoKHR handleInfo(*semaphore, kSemaphoreHandleType);
+      handle = reinterpret_cast<int64_t>(device.getSemaphoreWin32HandleKHR(handleInfo));
+#else
+      vk::SemaphoreGetFdInfoKHR handleInfo(*semaphore, kSemaphoreHandleType);
+      handle = static_cast<int64_t>(device.getSemaphoreFdKHR(handleInfo));
+#endif
+    };
+
+    makeExportable(renderFinished, renderFinishedHandle);
+    makeExportable(imageAvailable, imageAvailableHandle);
+
+    fence = vk::raii::Fence(device, vk::FenceCreateInfo());
   }
 
   void Sync::cleanup()
   {
-    presentSemaphores.clear();
-    renderSemaphores.clear();
-    fences.clear();
+    renderFinished = nullptr;
+    imageAvailable = nullptr;
+    fence = nullptr;
+    renderFinishedHandle = 0;
+    imageAvailableHandle = 0;
   }
 } // Bastion

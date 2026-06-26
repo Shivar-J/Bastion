@@ -7,24 +7,17 @@
 
 namespace Bastion
 {
-  vk::SurfaceFormatKHR& Swapchain::getSurfaceFormat()
-  {
-    return surfaceFormat;
-  }
+#if defined(_WIN32)
+  static constexpr vk::ExternalMemoryHandleTypeFlagBits kMemoryHandleType =
+    vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+#else
+  static constexpr vk::ExternalMemoryHandleTypeFlagBits kMemoryHandleType =
+    vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd;
+#endif
 
-  vk::raii::SwapchainKHR& Swapchain::getSwapchain()
+  vk::Format Swapchain::getFormat() const
   {
-    return swapchain;
-  }
-
-  std::vector<vk::Image>& Swapchain::getImages()
-  {
-    return images;
-  }
-
-  std::vector<vk::raii::ImageView>& Swapchain::getImageViews()
-  {
-    return imageViews;
+    return format;
   }
 
   vk::Extent2D& Swapchain::getExtent()
@@ -32,94 +25,92 @@ namespace Bastion
     return extent;
   }
 
-  vk::SurfaceFormatKHR Swapchain::pickSurfaceFormat(std::vector<vk::SurfaceFormatKHR> availableFormats)
+  vk::raii::Image& Swapchain::getImage()
   {
-    const auto formatIter = std::ranges::find_if(availableFormats, [](const auto& _format)
-    {
-      return _format.format == vk::Format::eR8G8B8A8Srgb && _format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
-    });
-
-    return formatIter != availableFormats.end() ? *formatIter : availableFormats[0];
+    return image;
   }
 
-  vk::PresentModeKHR Swapchain::pickPresentMode(std::vector<vk::PresentModeKHR> availablePresentModes)
+  vk::raii::ImageView& Swapchain::getImageView()
   {
-    return std::ranges::any_of(availablePresentModes, [](const auto value)
-    {
-      return vk::PresentModeKHR::eMailbox == value;
-    }) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
+    return imageView;
   }
 
-  vk::Extent2D Swapchain::pickExtent(raiiGLFWwindow& window, const vk::SurfaceCapabilitiesKHR& capabilities)
+  uint64_t Swapchain::getMemorySize() const
   {
-    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-    {
-      return capabilities.currentExtent;
-    }
-
-    int width, height;
-    glfwGetFramebufferSize(window.get(), &width, &height);
-
-    return {
-      std::clamp<uint32_t>(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-      std::clamp<uint32_t>(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
-    };
+    return memorySize;
   }
 
-  void Swapchain::createSwapchain(raiiGLFWwindow& window, vk::raii::PhysicalDevice& physicalDevice,
-    vk::raii::Device& device, vk::raii::SurfaceKHR& surface)
+  int64_t Swapchain::getMemoryHandle() const
   {
-    auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-    extent = pickExtent(window, surfaceCapabilities);
-    surfaceFormat = pickSurfaceFormat(physicalDevice.getSurfaceFormatsKHR(*surface));
+    return memoryHandle;
+  }
 
-    uint32_t minImageCount = std::max(3u, surfaceCapabilities.minImageCount);
-    if ((0 < surfaceCapabilities.maxImageCount) && (surfaceCapabilities.maxImageCount < minImageCount))
-    {
-      minImageCount = surfaceCapabilities.maxImageCount;
-    }
+  void Swapchain::create(Device& device, uint32_t width, uint32_t height)
+  {
+    extent = vk::Extent2D(width, height);
 
-    auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
-    auto presentMode = pickPresentMode(presentModes);
-
-    vk::SwapchainCreateInfoKHR swapchainCreateInfo(
-      {},
-      *surface,
-      minImageCount,
-      surfaceFormat.format,
-      surfaceFormat.colorSpace,
-      extent,
-      1,
-      vk::ImageUsageFlagBits::eColorAttachment,
-      vk::SharingMode::eExclusive,
-      {},
-      surfaceCapabilities.currentTransform,
-      vk::CompositeAlphaFlagBitsKHR::eOpaque,
-      presentMode,
-      true
+    vk::ExternalMemoryImageCreateInfo externalImageInfo(kMemoryHandleType);
+    vk::ImageCreateInfo imageInfo(
+      vk::ImageCreateFlagBits::eMutableFormat,
+      vk::ImageType::e2D,
+      format,
+      vk::Extent3D(width, height, 1),
+      1, 1,
+      vk::SampleCountFlagBits::e1,
+      vk::ImageTiling::eOptimal,
+      vk::ImageUsageFlagBits::eColorAttachment |
+      vk::ImageUsageFlagBits::eTransferDst |
+      vk::ImageUsageFlagBits::eTransferSrc |
+      vk::ImageUsageFlagBits::eSampled,
+      vk::SharingMode::eExclusive
     );
+    imageInfo.setPNext(&externalImageInfo);
+    image = vk::raii::Image(device.getDevice(), imageInfo);
 
-    swapchain = vk::raii::SwapchainKHR(device, swapchainCreateInfo);
-    images = swapchain.getImages();
-  }
+    vk::MemoryRequirements requirements = image.getMemoryRequirements();
+    memorySize = requirements.size;
 
-  void Swapchain::createImageViews(vk::raii::Device& device)
-  {
-    vk::ImageViewCreateInfo createInfo(
-      {}, {},
+    vk::PhysicalDeviceMemoryProperties memoryProperties = device.getPhysicalDevice().getMemoryProperties();
+    uint32_t memoryTypeIndex = ~0u;
+    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+    {
+      if ((requirements.memoryTypeBits & (1u << i)) &&
+        (memoryProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal))
+      {
+        memoryTypeIndex = i;
+        break;
+      }
+    }
+    if (memoryTypeIndex == ~0u)
+    {
+      throw std::runtime_error("No suitable memory type for offscreen image");
+    }
+
+    vk::ExportMemoryAllocateInfo exportInfo(kMemoryHandleType);
+    vk::MemoryDedicatedAllocateInfo dedicatedInfo(*image);
+    dedicatedInfo.setPNext(&exportInfo);
+    vk::MemoryAllocateInfo allocateInfo(requirements.size, memoryTypeIndex);
+    allocateInfo.setPNext(&dedicatedInfo);
+
+    memory = vk::raii::DeviceMemory(device.getDevice(), allocateInfo);
+    image.bindMemory(*memory, 0);
+
+#if defined(_WIN32)
+    vk::MemoryGetWin32HandleInfoKHR handleInfo(*memory, kMemoryHandleType);
+    memoryHandle = reinterpret_cast<int64_t>(device.getDevice().getMemoryWin32HandleKHR(handleInfo));
+#else
+    vk::MemoryGetFdInfoKHR handleInfo(*memory, kMemoryHandleType);
+    memoryHandle = static_cast<int64_t>(device.getDevice().getMemoryFdKHR(handleInfo));
+#endif
+
+    vk::ImageViewCreateInfo viewInfo(
+      {},
+      *image,
       vk::ImageViewType::e2D,
-      surfaceFormat.format,
+      format,
       {},
-      vk::ImageSubresourceRange(
-        vk::ImageAspectFlagBits::eColor,
-        0, 1, 0, 1
-      )
+      vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
     );
-
-    for (auto& image : images)
-    {
-      createInfo.image = image;
-      imageViews.emplace_back(device, createInfo);
-    }
+    imageView = vk::raii::ImageView(device.getDevice(), viewInfo);
   }
 } // Bastion

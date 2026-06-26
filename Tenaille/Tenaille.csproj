@@ -3,12 +3,12 @@
         <OutputType>WinExe</OutputType>
         <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     </PropertyGroup>
 
     <ItemGroup>
-        <Folder Include="Models\"/>
         <AvaloniaResource Include="Assets\**"/>
     </ItemGroup>
 
@@ -22,5 +22,21 @@
             <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0-preview.5.26302.115" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="native/Bastion.dll" Condition="Exists('native/Bastion.dll')">
+            <Link>Bastion.dll</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="native/libBastion.so" Condition="Exists('native/libBastion.so')">
+            <Link>libBastion.so</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="native/slang.spv" Condition="Exists('native/slang.spv')">
+            <Link>slang.spv</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 </Project>

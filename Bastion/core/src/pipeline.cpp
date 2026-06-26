@@ -49,7 +49,7 @@ namespace Bastion
     shaderPath = path;
   }
 
-  void Pipeline::createPipeline(vk::raii::Device& device, vk::SurfaceFormatKHR& surfaceFormat)
+  void Pipeline::createPipeline(vk::raii::Device& device, vk::Format colorFormat)
   {
     vk::raii::ShaderModule module = createShaderModule(device, readFile(shaderPath));
 
@@ -133,7 +133,7 @@ namespace Bastion
 
     vk::PipelineRenderingCreateInfo pipelineRendering(
       0, 1,
-      &surfaceFormat.format
+      &colorFormat
     );
 
     vk::GraphicsPipelineCreateInfo pipelineCreateInfo(

@@ -17,7 +17,15 @@ namespace Bastion
     QueueInfo queueInfo;
 
     std::vector<const char*> requiredDeviceExtensions = {
-      vk::KHRSwapchainExtensionName
+      vk::KHRExternalMemoryExtensionName,
+      vk::KHRExternalSemaphoreExtensionName,
+#if defined(_WIN32)
+      vk::KHRExternalMemoryWin32ExtensionName,
+      vk::KHRExternalSemaphoreWin32ExtensionName
+#else
+      vk::KHRExternalMemoryFdExtensionName,
+      vk::KHRExternalSemaphoreFdExtensionName
+#endif
     };
 
     std::vector<const char*> optionalDeviceExtensions = {
@@ -29,8 +37,8 @@ namespace Bastion
     [[nodiscard]] vk::raii::Device& getDevice();
     [[nodiscard]] QueueInfo& getQueueInfo();
 
-    void pickPhysicalDevice(const vk::raii::Instance& instance);
-    void createDevice(vk::raii::SurfaceKHR& surface);
+    void pickPhysicalDevice(const vk::raii::Instance& instance, const uint8_t* id_bytes, uint32_t uint32, bool is_luid);
+    void createDevice();
   };
 } // Bastion
 

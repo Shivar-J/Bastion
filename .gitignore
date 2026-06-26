@@ -43,6 +43,7 @@
 build/
 Build/
 build-*/
+*/native/*
 
 # CMake generated files
 CMakeFiles/

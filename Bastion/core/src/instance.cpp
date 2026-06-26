@@ -3,7 +3,6 @@
 //
 
 #include "../inc/instance.h"
-#include "GLFW/glfw3.h"
 #include <iostream>
 
 namespace Bastion
@@ -11,11 +10,6 @@ namespace Bastion
   vk::raii::Instance& Instance::getInstance()
   {
     return instance;
-  }
-
-  vk::raii::SurfaceKHR& Instance::getSurface()
-  {
-    return surface;
   }
 
   void Instance::createInstance()
@@ -29,11 +23,10 @@ namespace Bastion
       AppInfo::version,
       apiVersion);
 
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-    extensions.push_back(vk::EXTSwapchainColorSpaceExtensionName);
+    std::vector<const char*> extensions;
+    extensions.push_back(vk::KHRGetPhysicalDeviceProperties2ExtensionName);
+    extensions.push_back(vk::KHRExternalMemoryCapabilitiesExtensionName);
+    extensions.push_back(vk::KHRExternalSemaphoreCapabilitiesExtensionName);
 #ifdef _DEBUG
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     std::vector<const char*> validationLayers = {
@@ -77,19 +70,6 @@ namespace Bastion
 
     debugMessenger = instance.createDebugUtilsMessengerEXT(createInfo);
 #endif
-  }
-
-  void Instance::createSurface(raiiGLFWwindow& window)
-  {
-    VkSurfaceKHR tempSurface;
-    VkResult glfwSurfaceRes = glfwCreateWindowSurface(*instance, window.get(), nullptr, &tempSurface);
-
-    if (glfwSurfaceRes != 0)
-    {
-      throw std::runtime_error("failed to create glfw window surface");
-    }
-
-    surface = vk::raii::SurfaceKHR(instance, tempSurface);
   }
 
   vk::Bool32 Instance::debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity,

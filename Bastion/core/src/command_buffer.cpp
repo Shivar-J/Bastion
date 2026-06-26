@@ -26,7 +26,7 @@ namespace Bastion
     commandPool = vk::raii::CommandPool(device, commandPoolCreateInfo);
   }
 
-  void CommandBuffer::transitionImageLayout(const std::vector<vk::Image>& images, const uint32_t imageIndex,
+  void CommandBuffer::transitionImageLayout(const vk::Image image,
     const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout, const vk::AccessFlags2 srcAccessMask,
     const vk::AccessFlags2 dstAccessMask, const vk::PipelineStageFlags2 srcStageMask, const vk::PipelineStageFlags2 dstStageMask) const
   {
@@ -39,7 +39,7 @@ namespace Bastion
       newLayout,
       VK_QUEUE_FAMILY_IGNORED,
       VK_QUEUE_FAMILY_IGNORED,
-      images[imageIndex],
+      image,
       vk::ImageSubresourceRange(
         vk::ImageAspectFlagBits::eColor,
         0, 1, 0, 1
@@ -65,13 +65,13 @@ namespace Bastion
     commandBuffer = std::move(vk::raii::CommandBuffers(device, allocInfo).front());
   }
 
-  void CommandBuffer::record(vk::Extent2D& extent, std::vector<vk::Image>& images,
-                             std::vector<vk::raii::ImageView>& imageViews, vk::raii::Pipeline& pipeline, uint32_t imageIndex)
+  void CommandBuffer::record(vk::Extent2D& extent, vk::Image image,
+                             vk::raii::ImageView& imageView, Scene& scene, float anim)
   {
     commandBuffer.begin({});
 
-    transitionImageLayout(images,
-      imageIndex, vk::ImageLayout::eUndefined,
+    transitionImageLayout(image,
+      vk::ImageLayout::eUndefined,
       vk::ImageLayout::eColorAttachmentOptimal,
       {},
       vk::AccessFlagBits2::eColorAttachmentWrite,
@@ -81,7 +81,7 @@ namespace Bastion
 
     vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
     vk::RenderingAttachmentInfo attachmentInfo(
-      imageViews[imageIndex],
+      imageView,
       vk::ImageLayout::eColorAttachmentOptimal,
       {}, {}, {},
       vk::AttachmentLoadOp::eClear,
@@ -101,16 +101,15 @@ namespace Bastion
     );
 
     commandBuffer.beginRendering(renderingInfo);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
     commandBuffer.setViewport(0, vk::Viewport(0.0f, 0.0f,
       static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f));
     commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
-    commandBuffer.draw(3, 1, 0, 0);
+    scene.record(commandBuffer, extent.width, extent.height, anim);
     commandBuffer.endRendering();
 
-    transitionImageLayout(images, imageIndex,
+    transitionImageLayout(image,
       vk::ImageLayout::eColorAttachmentOptimal,
-      vk::ImageLayout::ePresentSrcKHR,
+      vk::ImageLayout::eShaderReadOnlyOptimal,
       vk::AccessFlagBits2::eColorAttachmentWrite,
       {},
       vk::PipelineStageFlagBits2::eColorAttachmentOutput,

@@ -6,34 +6,30 @@
 #define BASTION_SWAPCHAIN_H
 
 #include <vulkan/vulkan_raii.hpp>
-#include "raii_glfw_window.h"
+#include "device.h"
 
 namespace Bastion
 {
   class Swapchain
   {
   private:
-    vk::raii::SwapchainKHR swapchain = nullptr;
-    vk::Format format = vk::Format::eUndefined;
+    vk::raii::Image image = nullptr;
+    vk::raii::DeviceMemory memory = nullptr;
+    vk::raii::ImageView imageView = nullptr;
+    vk::Format format = vk::Format::eR8G8B8A8Unorm;
     vk::Extent2D extent;
-    std::vector<vk::Image> images;
-    vk::SurfaceFormatKHR surfaceFormat;
-    std::vector<vk::raii::ImageView> imageViews;
+    uint64_t memorySize = 0;
+    int64_t memoryHandle = 0;
 
   public:
-    [[nodiscard]] vk::SurfaceFormatKHR& getSurfaceFormat();
-    [[nodiscard]] vk::raii::SwapchainKHR& getSwapchain();
-    [[nodiscard]] std::vector<vk::Image>& getImages();
-    [[nodiscard]] std::vector<vk::raii::ImageView>& getImageViews();
+    [[nodiscard]] vk::Format getFormat() const;
     [[nodiscard]] vk::Extent2D& getExtent();
+    [[nodiscard]] vk::raii::Image& getImage();
+    [[nodiscard]] vk::raii::ImageView& getImageView();
+    [[nodiscard]] uint64_t getMemorySize() const;
+    [[nodiscard]] int64_t getMemoryHandle() const;
 
-    [[nodiscard]] vk::SurfaceFormatKHR pickSurfaceFormat(std::vector<vk::SurfaceFormatKHR> availableFormats);
-    [[nodiscard]] vk::PresentModeKHR pickPresentMode(std::vector<vk::PresentModeKHR> availablePresentModes);
-    [[nodiscard]] vk::Extent2D pickExtent(raiiGLFWwindow& window, const vk::SurfaceCapabilitiesKHR& capabilities);
-
-    void createSwapchain(raiiGLFWwindow& window, vk::raii::PhysicalDevice& physicalDevice,
-      vk::raii::Device& device, vk::raii::SurfaceKHR& surface);
-    void createImageViews(vk::raii::Device& device);
+    void create(Device& device, uint32_t width, uint32_t height);
   };
 } // Bastion
 

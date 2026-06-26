@@ -7,6 +7,7 @@
 
 #include <vulkan/vulkan_raii.hpp>
 #include "device.h"
+#include "scene.h"
 
 namespace Bastion
 {
@@ -21,12 +22,12 @@ namespace Bastion
     [[nodiscard]] vk::raii::CommandBuffer& getCommandBuffer();
 
     void createCommandPool(const vk::raii::Device& device, const QueueInfo& queue);
-    void transitionImageLayout(const std::vector<vk::Image>& images, uint32_t imageIndex,
+    void transitionImageLayout(vk::Image image,
       vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags2 srcAccessMask,
       vk::AccessFlags2 dstAccessMask, vk::PipelineStageFlags2 srcStageMask, vk::PipelineStageFlags2 dstStageMask) const;
     void create(const vk::raii::Device& device);
-    void record(vk::Extent2D& extent, std::vector<vk::Image>& images, std::vector<vk::raii::ImageView>& imageViews,
-      vk::raii::Pipeline& pipeline, uint32_t imageIndex);
+    void record(vk::Extent2D& extent, vk::Image image, vk::raii::ImageView& imageView,
+      Scene& scene, float anim);
 
   };
 } // Bastion

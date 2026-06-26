@@ -22,19 +22,21 @@ namespace Bastion
     return queueInfo;
   }
 
-  void Device::pickPhysicalDevice(const vk::raii::Instance& instance)
+  void Device::pickPhysicalDevice(const vk::raii::Instance& instance,
+    const uint8_t* idBytes, uint32_t idLen, bool isLuid)
   {
     std::vector<vk::raii::PhysicalDevice> devices = instance.enumeratePhysicalDevices();
-    const auto devIter = std::ranges::find_if(devices, [&](auto const& _device)
+
+    auto isSuitable = [&](const vk::raii::PhysicalDevice& candidate)
     {
-      const bool supportsVulkan13 = _device.getProperties().apiVersion >= vk::ApiVersion13;
-      auto queueFamilies = _device.getQueueFamilyProperties();
+      const bool supportsVulkan13 = candidate.getProperties().apiVersion >= vk::ApiVersion13;
+      auto queueFamilies = candidate.getQueueFamilyProperties();
       const bool supportsGraphics = std::ranges::any_of(queueFamilies, [](auto const& qfp)
       {
         return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics);
       });
 
-      auto availableDeviceExtensions = _device.enumerateDeviceExtensionProperties();
+      auto availableDeviceExtensions = candidate.enumerateDeviceExtensionProperties();
       const bool supportsAllRequiredExtensions = std::ranges::all_of(requiredDeviceExtensions,
         [&availableDeviceExtensions](auto const& requiredDeviceExtension)
       {
@@ -45,31 +47,71 @@ namespace Bastion
         });
       });
 
-      auto features = _device.template getFeatures2<vk::PhysicalDeviceFeatures2,
+      auto features = candidate.template getFeatures2<vk::PhysicalDeviceFeatures2,
       vk::PhysicalDeviceVulkan13Features, vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
       const bool supportsRequiredFeatures = features.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering
         && features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
 
       return supportsVulkan13 && supportsGraphics && supportsAllRequiredExtensions && supportsRequiredFeatures;
-    });
-    if (devIter != devices.end())
+    };
+
+    auto matchesId = [&](const vk::raii::PhysicalDevice& candidate)
     {
-      physicalDevice = *devIter;
-    }
-    else
+      if (!idBytes || idLen == 0) return false;
+      auto idProperties = candidate.template getProperties2<vk::PhysicalDeviceProperties2,
+        vk::PhysicalDeviceIDProperties>().template get<vk::PhysicalDeviceIDProperties>();
+      if (isLuid && idProperties.deviceLUIDValid && idLen == VK_LUID_SIZE)
+      {
+        return memcmp(idProperties.deviceLUID.data(), idBytes, VK_LUID_SIZE) == 0;
+      }
+      if (!isLuid && idLen == VK_UUID_SIZE)
+      {
+        return memcmp(idProperties.deviceUUID.data(), idBytes, VK_UUID_SIZE) == 0;
+      }
+      return false;
+    };
+
+    const vk::raii::PhysicalDevice* selected = nullptr;
+    for (const auto& candidate : devices)
     {
-      throw std::runtime_error("Failed to find suitable GPU");
+      if (matchesId(candidate))
+      {
+        selected = &candidate;
+        break;
+      }
     }
+
+    if (!selected)
+    {
+      for (const auto& candidate : devices)
+      {
+        if (isSuitable(candidate))
+        {
+          selected = &candidate;
+          break;
+        }
+      }
+    }
+
+    if (!selected)
+    {
+      for (const auto& candidate : devices)
+      {
+        selected = &candidate;
+        break;
+      }
+    }
+
+    physicalDevice = *selected;
   }
 
-  void Device::createDevice(vk::raii::SurfaceKHR& surface)
+  void Device::createDevice()
   {
     std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
     uint32_t queueIndex = ~0;
     for (uint32_t i = 0; i < queueFamilyProperties.size(); i++)
     {
-      if ((queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics)
-        && physicalDevice.getSurfaceSupportKHR(i, surface))
+      if (queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics)
       {
         queueIndex = i;
         break;
