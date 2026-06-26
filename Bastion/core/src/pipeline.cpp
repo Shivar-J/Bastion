@@ -39,6 +39,11 @@ namespace Bastion
     return pipeline;
   }
 
+  vk::raii::PipelineLayout& Pipeline::getPipelineLayout()
+  {
+    return pipelineLayout;
+  }
+
   std::string Pipeline::getShaderPath()
   {
     return shaderPath;

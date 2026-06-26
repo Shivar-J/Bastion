@@ -17,17 +17,10 @@ namespace Tenaille.Controls;
 
 public class SurfaceControl : Control, IDisposable
 {
-    private static readonly string LogPath = System.IO.Path.Combine(AppContext.BaseDirectory, "bastion.log");
-
     private static void Log(string msg)
     {
         var line = "[BastionSurface] " + msg;
         Console.Error.WriteLine(line);
-        try
-        {
-            System.IO.File.AppendAllText(LogPath, line + Environment.NewLine);
-        }
-        catch { }
     }
 
     private Compositor? _compositor;
@@ -217,7 +210,7 @@ public class SurfaceControl : Control, IDisposable
 
         _timer = new DispatcherTimer(DispatcherPriority.Render)
         {
-            Interval = TimeSpan.FromMilliseconds(16)
+            Interval = TimeSpan.FromMilliseconds(1)
         };
         _timer.Tick += OnTick;
         _timer.Start();

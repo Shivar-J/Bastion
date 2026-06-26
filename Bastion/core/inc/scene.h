@@ -22,7 +22,7 @@ namespace Bastion
   public:
     void create(vk::raii::Device& device, vk::Format colorFormat,
       const std::string& shaderPath, uint32_t vertexCount);
-    void record(vk::raii::CommandBuffer& cmd);
+    void record(vk::raii::CommandBuffer& cmd, float anim);
   };
 
   class Scene

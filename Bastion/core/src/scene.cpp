@@ -14,9 +14,11 @@ namespace Bastion
     pipeline.createPipeline(device, colorFormat);
   }
 
-  void Model::record(vk::raii::CommandBuffer& cmd)
+  void Model::record(vk::raii::CommandBuffer& cmd, float anim)
   {
     cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline.getPipeline());
+    float radians = anim * 3.14159f / 180.0f;
+    vkCmdPushConstants(*cmd, *pipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float), &radians);
     cmd.draw(vertexCount, 1, 0, 0);
   }
 
@@ -35,11 +37,11 @@ namespace Bastion
     return *models.back();
   }
 
-  void Scene::record(vk::raii::CommandBuffer& cmd, uint32_t, uint32_t, float) const
+  void Scene::record(vk::raii::CommandBuffer& cmd, uint32_t width, uint32_t height, float anim) const
   {
     for (const auto& model : models)
     {
-      model->record(cmd);
+      model->record(cmd, anim);
     }
   }
 

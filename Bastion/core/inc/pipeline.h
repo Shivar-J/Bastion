@@ -20,6 +20,7 @@ namespace Bastion
     [[nodiscard]] std::vector<char> readFile(const std::string filename);
   public:
     [[nodiscard]] vk::raii::Pipeline& getPipeline();
+    [[nodiscard]] vk::raii::PipelineLayout& getPipelineLayout();
     [[nodiscard]] std::string getShaderPath();
 
     void setShaderPath(const std::string& path);

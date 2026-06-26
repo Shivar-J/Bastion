@@ -8,7 +8,20 @@
         x:Class="Tenaille.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Tenaille">
+        Title="Bastion">
         
-        <controls:SurfaceControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <Grid>
+                <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width='*'></ColumnDefinition>
+                        <ColumnDefinition Width='*'></ColumnDefinition>
+                        <ColumnDefinition Width='*'></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                
+                <Grid.RowDefinitions>
+                        <RowDefinition Height='*'></RowDefinition>
+                        <RowDefinition Height='*'></RowDefinition>
+                        <RowDefinition Height='*'></RowDefinition>
+                </Grid.RowDefinitions>
+                <controls:SurfaceControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan='3' Grid.RowSpan='3'/>
+        </Grid>
 </Window>
