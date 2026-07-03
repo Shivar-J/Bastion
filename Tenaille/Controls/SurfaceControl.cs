@@ -1,28 +1,30 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Rendering;
+using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Rendering.Composition;
 using Avalonia.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Tenaille.Models;
 using Tenaille.Services;
-using VisualExtensions = Avalonia.VisualTree.VisualExtensions;
 
 namespace Tenaille.Controls;
 
 public class SurfaceControl : Control, IDisposable
 {
-    private static void Log(string msg)
+    private ILogService? _log;
+    
+    private void Log(string msg)
     {
         var line = "[BastionSurface] " + msg;
-        Console.Error.WriteLine(line);
+        _log?.Log(msg, LogLevel.Info);
     }
-
+    
     private Compositor? _compositor;
     private CompositionDrawingSurface? _drawingSurface;
     private CompositionSurfaceVisual? _surfaceVisual;
@@ -41,10 +43,17 @@ public class SurfaceControl : Control, IDisposable
     private bool _resizePending;
     private PixelSize _pendingSize;
     private bool _disposed;
-
+    
+    public override void Render(DrawingContext context)
+    {
+        context.DrawRectangle(Brushes.Transparent, null, new Rect(Bounds.Size));
+        base.Render(context);
+    }
+    
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _log = ((App)Application.Current!).Services!.GetRequiredService<ILogService>();
         _ = InitAsync();
     }
 
@@ -56,6 +65,14 @@ public class SurfaceControl : Control, IDisposable
         DestroyComposition();
     }
 
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        Point position = e.GetPosition(this);
+        
+        Log($"x: {position.X}, y: {position.Y}");
+    }
+    
     protected override void OnSizeChanged(SizeChangedEventArgs e)
     {
         base.OnSizeChanged(e);
@@ -272,9 +289,9 @@ public class SurfaceControl : Control, IDisposable
     
     private void ReleaseHandles()
     {
-        (_importedImage as IAsyncDisposable)?.DisposeAsync();
-        (_importedSignalSemaphore as IAsyncDisposable)?.DisposeAsync();
-        (_importedWaitSemaphore as IAsyncDisposable)?.DisposeAsync();
+        _importedImage?.DisposeAsync();
+        _importedSignalSemaphore?.DisposeAsync();
+        _importedWaitSemaphore?.DisposeAsync();
         _importedImage = null;
         _importedSignalSemaphore = null;
         _importedWaitSemaphore = null;

@@ -35,3 +35,4 @@ add_custom_target(shaders ALL COMMAND ${CMAKE_COMMAND} -E copy_directory
 add_dependencies(Bastion shaders)
 
 target_link_libraries(Bastion Vulkan::Vulkan)
+

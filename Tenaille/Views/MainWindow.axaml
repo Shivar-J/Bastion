@@ -4,6 +4,7 @@
         xmlns:controls="using:Tenaille.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="using:Tenaille.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Tenaille.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -22,6 +23,7 @@
                         <RowDefinition Height='*'></RowDefinition>
                         <RowDefinition Height='*'></RowDefinition>
                 </Grid.RowDefinitions>
-                <controls:SurfaceControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan='3' Grid.RowSpan='3'/>
+                <controls:SurfaceControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan='3' Grid.RowSpan='2'/>
+                <views:LogView DataContext="{Binding LogViewModel}" Grid.Row="2" Grid.ColumnSpan="3"/>
         </Grid>
 </Window>
