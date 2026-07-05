@@ -1,6 +1,9 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Tenaille.Models;
+
+[assembly: DisableRuntimeMarshalling]
 
 namespace Tenaille.Services;
 
@@ -23,9 +26,12 @@ public static partial class BastionInterop
     [LibraryImport(Dll, EntryPoint = "Render")]
     internal static partial void Render(float anim);
     
+    [LibraryImport(Dll, EntryPoint = "HandleUserInput")]
+    internal static partial void HandleUserInput([In] UserInput[] inputs, uint count);
+    
     [LibraryImport(Dll, EntryPoint = "GetSharedFrame")]
     internal static partial void GetSharedFrame(out SharedFrame sharedFrame);
-
+    
     [LibraryImport(Dll, EntryPoint = "Shutdown")]
     internal static partial void Shutdown();
 

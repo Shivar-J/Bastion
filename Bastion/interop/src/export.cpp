@@ -2,6 +2,7 @@
 // Created by sjadoona on 2026-06-24.
 //
 
+#include <cmath>
 #include "../inc/export.h"
 #include "../../core/inc/engine.h"
 
@@ -43,7 +44,23 @@ namespace Bastion
 
   BASTION_API void Render(float anim)
   {
-    engine().render(anim);
+    float mouseAnim = std::fmod(g_CurrentMouseX, 360.0f);
+
+    engine().render(mouseAnim);
+  }
+
+  BASTION_API void HandleUserInput(const UserInput* userInput, int32_t count)
+  {
+    if (!userInput || count <= 0) return;
+
+    for (int32_t i = 0; i < count; ++i)
+    {
+      if (userInput[i].type == InputType::MouseMove)
+      {
+        g_CurrentMouseX = userInput[i].mouseX;
+        g_CurrentMouseY = userInput[i].mouseY;
+      }
+    }
   }
 
   BASTION_API void GetSharedFrame(SharedFrame* out)

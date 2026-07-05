@@ -27,7 +27,8 @@ add_library(Bastion SHARED
         Bastion/core/src/scene.cpp
         Bastion/core/inc/scene.h
         Bastion/core/src/engine.cpp
-        Bastion/core/inc/engine.h)
+        Bastion/core/inc/engine.h
+        Bastion/core/inc/user_input.h)
 
 add_custom_target(shaders ALL COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/Bastion/shaders/" "$<TARGET_FILE_DIR:Bastion>/shaders")

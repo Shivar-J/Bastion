@@ -70,6 +70,18 @@ public class SurfaceControl : Control, IDisposable
         base.OnPointerMoved(e);
         Point position = e.GetPosition(this);
         
+        BastionInterop.HandleUserInput([
+            new ()
+            {
+                Type = InputType.MouseMove,
+                KeyCode = Key.None,
+                MouseX = (float)position.X,
+                MouseY = (float)position.Y,
+                WheelX = 0.0f,
+                WheelY = 0.0f
+            }
+        ], 1);
+        
         Log($"x: {position.X}, y: {position.Y}");
     }
     
@@ -276,6 +288,7 @@ public class SurfaceControl : Control, IDisposable
 
         _anim = (_anim + 1.0f) % 360.0f;
         BastionInterop.Render(_anim);
+        
         _frameInFlight = true;
         _drawingSurface.UpdateWithSemaphoresAsync(_importedImage!, _importedSignalSemaphore!, _importedWaitSemaphore!).ContinueWith(t =>
         {
