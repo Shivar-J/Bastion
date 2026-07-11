@@ -27,6 +27,9 @@ namespace Bastion
 
     void create(vk::raii::Device& device);
     void cleanup();
+
+  private:
+    void makeExportable(vk::raii::Device& device, vk::raii::Semaphore& semaphore, int64_t& handle);
   };
 } // Bastion
 

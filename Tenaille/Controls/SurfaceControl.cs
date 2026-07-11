@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia;
@@ -9,6 +11,7 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Rendering.Composition;
 using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Tenaille.Models;
 using Tenaille.Services;
@@ -21,7 +24,6 @@ public class SurfaceControl : Control, IDisposable
     
     private void Log(string msg)
     {
-        var line = "[BastionSurface] " + msg;
         _log?.Log(msg, LogLevel.Info);
     }
     
@@ -34,16 +36,23 @@ public class SurfaceControl : Control, IDisposable
     private ICompositionImportedGpuSemaphore? _importedSignalSemaphore;
     private ICompositionImportedGpuSemaphore? _importedWaitSemaphore;
 
-    private DispatcherTimer? _timer;
+    private Task? _renderLoop;
+    private bool _loopRunning = false;
+    
     private float _anim;
-    private bool _frameInFlight;
     private bool _gpuInteropReady;
     private bool _nativeReady;
     private PixelSize _nativeSize;
     private bool _resizePending;
     private PixelSize _pendingSize;
     private bool _disposed;
-    
+
+    private readonly Stopwatch _fpsStopwatch = Stopwatch.StartNew();
+    private long _lastFpsTicks = 0;
+    private double _fpsAccumulator = 0;
+    private int _frameCount = 0;
+    private double _currentFps;
+
     public override void Render(DrawingContext context)
     {
         context.DrawRectangle(Brushes.Transparent, null, new Rect(Bounds.Size));
@@ -82,7 +91,7 @@ public class SurfaceControl : Control, IDisposable
             }
         ], 1);
         
-        Log($"x: {position.X}, y: {position.Y}");
+        //Log($"x: {position.X}, y: {position.Y}");
     }
     
     protected override void OnSizeChanged(SizeChangedEventArgs e)
@@ -124,7 +133,7 @@ public class SurfaceControl : Control, IDisposable
             Log("Backend does not support " + imageType);
             return;
         }
-        
+
         bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         byte[]? gpuId = isWindows ? _gpuInterop.DeviceLuid : _gpuInterop.DeviceUuid;
         if (gpuId == null || gpuId.Length == 0)
@@ -167,14 +176,12 @@ public class SurfaceControl : Control, IDisposable
         {
             return;
         }
-        StopTimer();
         ReleaseHandles();
 
         if (!BastionInterop.Resize((uint)px.Width, (uint)px.Height))
         {
             Log("BastionInterop resize failed: " + BastionInterop.LastError());
             _nativeReady = false;
-            StartTimer();
             return;
         }
 
@@ -186,13 +193,12 @@ public class SurfaceControl : Control, IDisposable
         if (frame.MemHandle == 0)
         {
             Log("MemHandle null: " + BastionInterop.LastError());
-            StartTimer();
             return;
         }
-        
+
         double scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
         _surfaceVisual!.Size = new Vector(frame.Width / scaling, frame.Height / scaling);
-
+        
         string imageType = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 
             KnownPlatformGraphicsExternalImageHandleTypes.VulkanOpaqueNtHandle :
             KnownPlatformGraphicsExternalImageHandleTypes.VulkanOpaquePosixFileDescriptor;
@@ -223,81 +229,86 @@ public class SurfaceControl : Control, IDisposable
         {
             Log("Import failed: " + e.Message);
             ReleaseHandles();
-            StartTimer();
             return;
         }
-
-        StartTimer();
     }
     
     private void StartTimer()
     {
-        if (_timer != null)
+        if (_renderLoop != null) 
         {
             return;
         }
 
-        _timer = new DispatcherTimer(DispatcherPriority.Render)
-        {
-            Interval = TimeSpan.FromMilliseconds(1)
-        };
-        _timer.Tick += OnTick;
-        _timer.Start();
+        _loopRunning = true;
+        _renderLoop = Dispatcher.UIThread.InvokeAsync(RenderLoop, DispatcherPriority.Render);
     }
     
     private void StopTimer()
     {
-        if (_timer == null)
-        {
-            return;
-        }
-        
-        _timer.Stop();
-        _timer.Tick -= OnTick;
-        _timer = null;
+        _loopRunning = false;
+        _renderLoop = null;
     }
 
-    private void OnTick(object? sender, EventArgs e)
+    private async Task RenderLoop()
     {
-        if (_frameInFlight)
+        while (_loopRunning)
         {
-            return;
-        }
-
-        if (_resizePending && _gpuInteropReady)
-        {
-            _resizePending = false;
-            _frameInFlight = true;
-            ResizeAsync(_pendingSize).ContinueWith(_ => _frameInFlight = false, TaskScheduler.FromCurrentSynchronizationContext());
-            return;
-        }
-
-        if (!_nativeReady || _gpuInterop == null || _drawingSurface == null)
-        {
-            return;
-        }
-
-        if ((_importedImage?.IsLost ?? true) ||
-            (_importedSignalSemaphore?.IsLost ?? true) ||
-            (_importedWaitSemaphore?.IsLost ?? true))
-        {
-            _frameInFlight = true;
-            ResizeAsync(_nativeSize).ContinueWith(_ => _frameInFlight = false, TaskScheduler.FromCurrentSynchronizationContext());
-            return;
-        }
-
-        _anim = (_anim + 1.0f) % 360.0f;
-        BastionInterop.Render(_anim);
-        
-        _frameInFlight = true;
-        _drawingSurface.UpdateWithSemaphoresAsync(_importedImage!, _importedSignalSemaphore!, _importedWaitSemaphore!).ContinueWith(t =>
-        {
-            _frameInFlight = false;
-            if (t.IsFaulted)
+            try
             {
-                Log("UpdateWithSemaphoresAsync: " + t.Exception!.InnerException!.Message);
+                if (_resizePending && _gpuInteropReady)
+                {
+                    _resizePending = false;
+                    await ResizeAsync(_pendingSize);
+                    continue;
+                }
+
+                if (!_nativeReady || _gpuInterop == null || _drawingSurface == null)
+                {
+                    continue;
+                }
+
+                if ((_importedImage?.IsLost ?? true) ||
+                    (_importedSignalSemaphore?.IsLost ?? true) ||
+                    (_importedWaitSemaphore?.IsLost ?? true))
+                {
+                    await ResizeAsync(_nativeSize);
+                    continue;
+                }
+
+                _anim = (_anim + 1.0f) % 360.0f;
+                BastionInterop.Render(_anim);
+                
+                await _drawingSurface.UpdateWithSemaphoresAsync(_importedImage!, _importedSignalSemaphore!,
+                    _importedWaitSemaphore!);
+                
+                UpdateFps();
             }
-        }, TaskScheduler.FromCurrentSynchronizationContext());
+            catch (Exception ex)
+            {
+                Log($"Error: {ex.Message} from {MethodBase.GetCurrentMethod()!.Name}");
+            }
+        }
+    }
+
+    private void UpdateFps()
+    {
+        long currentTicks = _fpsStopwatch.ElapsedTicks;
+        double deltaTime = (double)(currentTicks - _lastFpsTicks) / Stopwatch.Frequency;
+        _lastFpsTicks = currentTicks;
+
+        _fpsAccumulator += deltaTime;
+        _frameCount++;
+
+        if (_fpsAccumulator >= 0.5)
+        {
+            _currentFps = _frameCount / _fpsAccumulator;
+            _frameCount = 0;
+            _fpsAccumulator = 0;
+
+            var topLevel = TopLevel.GetTopLevel(this) as Window;
+            topLevel?.Title = $"Bastion [FPS: {_currentFps:F0}]";
+        }
     }
     
     private void ReleaseHandles()

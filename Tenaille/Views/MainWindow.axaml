@@ -23,7 +23,9 @@
                         <RowDefinition Height='*'></RowDefinition>
                         <RowDefinition Height='*'></RowDefinition>
                 </Grid.RowDefinitions>
-                <controls:SurfaceControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan='3' Grid.RowSpan='2'/>
+                <controls:SurfaceControl x:Name="Surface"
+                                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                         Grid.ColumnSpan="3" Grid.RowSpan="2"/>
                 <views:LogView DataContext="{Binding LogViewModel}" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"  />
         </Grid>
 </Window>

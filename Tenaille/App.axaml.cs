@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Rendering;
 using Microsoft.Extensions.DependencyInjection;
 using Tenaille.Controls;
 using Tenaille.Services;
@@ -21,7 +22,7 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         Services = BuildServiceProvider();
-
+        
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var mainViewModel = Services.GetRequiredService<MainWindowViewModel>();

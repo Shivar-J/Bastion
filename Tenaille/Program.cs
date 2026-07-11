@@ -42,7 +42,8 @@ sealed class Program
         {
             builder = builder.With(new X11PlatformOptions
             {
-                RenderingMode = new[] { X11RenderingMode.Vulkan }
+                RenderingMode = new[] { X11RenderingMode.Vulkan },
+                ShouldRenderOnUIThread = false
             });
         }
 

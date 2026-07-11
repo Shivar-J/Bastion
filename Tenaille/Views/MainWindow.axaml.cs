@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Rendering;
 
 namespace Tenaille.Views;
 
