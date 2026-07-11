@@ -1,12 +1,41 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-set -o pipefail
+clean_flag=false
+debug_flag=false
+release_flag=false
+mode="Debug"
 
-read -p "Build Mode
-1: Debug
-2: Release
-3: Delete Debug & Release Files
-" mode
+print_usage() {
+  printf "Usage:
+  [-d debug]
+  [-r release]
+
+  [-c clean]
+  "
+}
+
+invalid_usage() {
+  printf "Flags %s and %s cannot be set together\n" "$1" "$2"
+  exit 1
+}
+
+while getopts ":cdr" flag; do
+  case "${flag}" in
+    c) clean_flag=true;;
+    d) debug_flag=true;;
+    r) release_flag=true;;
+    *) print_usage
+      exit 1;;
+  esac
+done
+
+if [ "$debug_flag" = true ] && [ "$release_flag" = true ]; then
+  invalid_usage "-d" "-r"
+fi
+
+if [ "$release_flag" = true ]; then
+  mode="Release"
+fi
 
 base="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bastionDir="$base/Bastion"
@@ -17,47 +46,39 @@ csproj="$base/Tenaille/Tenaille.csproj"
 mkdir -p "$buildDir"
 mkdir -p "$nativeDir"
 
-if [ "$mode" == "1" ]; then
-  mkdir -p "$buildDir/Debug"
-
-  if [ ! -a "$buildDir/CMakeCache.txt" ]; then
-    cmake -S "$base" -B "$buildDir/Debug" -G Ninja -DCMAKE_BUILD_TYPE=Debug
-  else
-    cmake -S "$base" -B "$buildDir/Debug" -DCMAKE_BUILD_TYPE=Debug
-  fi
-
-  slangc "$bastionDir/shaders/shader.slang" -target spirv -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry vertMain -entry fragMain -o "$bastionDir/shaders/slang.spv"
-
-  cmake --build "$buildDir/Debug" --config Debug
-
-  cp -u "$buildDir/Debug/shaders/"*.spv "$nativeDir/"
-  cp -u "$buildDir/Debug/libBastion.so" "$nativeDir/"
-
-  dotnet build "$csproj" -c Debug --no-restore
-  dotnet run --project "$csproj" -c Debug --no-restore
-
-elif [ "$mode" == "2" ]; then
-  mkdir -p "$buildDir/Release"
-
-  if [ ! -a "$buildDir/CMakeCache.txt" ]; then
-    cmake -S "$base" -B "$buildDir/Release" -G Ninja -DCMAKE_BUILD_TYPE=Release
-  else
-    cmake -S "$base" -B "$buildDir/Release" -DCMAKE_BUILD_TYPE=Release
-  fi
-
-  slangc "$bastionDir/shaders/shader.slang" -target spirv -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry vertMain -entry fragMain -o "$bastionDir/shaders/slang.spv"
-
-  cmake --build "$buildDir/Release" --config Release
-
-  cp -u "$buildDir/Release/shaders/"*.spv "$nativeDir/"
-  cp -u "$buildDir/Release/libBastion.so" "$nativeDir/"
-
-  dotnet build "$csproj" -c Release --no-restore
-  dotnet run --project "$csproj" -c Release --no-restore
-elif [ "$mode" == "3" ]; then
+rebuild_build_bastion() {
+  printf "Rebuild %s\n" "$1"
   rm -rf "$buildDir"
   rm -rf "$nativeDir"
+
+  mkdir -p "$buildDir"
+  mkdir -p "$nativeDir"
+
+  build_bastion "$1"
+}
+
+build_bastion() {
+  mkdir -p "$buildDir/$1"
+
+  if [ ! -e "$buildDir/CMakeCache.txt" ]; then
+    cmake -S "$base" -B "$buildDir/$1" -G Ninja -DCMAKE_BUILD_TYPE="$1"
+  else
+    cmake -S "$base" -B "$buildDir/$1" -DCMAKE_BUILD_TYPE="$1"
+  fi
+
+  slangc "$bastionDir/shaders/shader.slang" -target spirv -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry vertMain -entry fragMain -o "$bastionDir/shaders/slang.spv"
+
+  cmake --build "$buildDir/$1" --config "$1"
+
+  cp -u "$buildDir/$1/shaders/"*.spv "$nativeDir/"
+  cp -u "$buildDir/$1/libBastion.so" "$nativeDir/"
+
+  dotnet build "$csproj" -c "$1" --no-restore
+  dotnet run --project "$csproj" -c "$1" --no-restore
+}
+
+if [ "$clean_flag" = true ]; then
+  rebuild_build_bastion "$mode"
 else
-  echo "Unknown parameter"
-  exit 1
+  build_bastion "$mode"
 fi
