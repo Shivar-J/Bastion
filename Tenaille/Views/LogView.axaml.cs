@@ -1,7 +1,5 @@
 using System.Collections.Specialized;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using Tenaille.ViewModels;
 
 namespace Tenaille.Views;

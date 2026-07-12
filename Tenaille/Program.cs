@@ -1,8 +1,6 @@
 ﻿using Avalonia;
 using System;
 using System.Runtime.InteropServices;
-using Avalonia.X11;
-using Avalonia.Win32;
 
 namespace Tenaille;
 

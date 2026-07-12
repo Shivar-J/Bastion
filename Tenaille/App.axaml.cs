@@ -1,9 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Avalonia.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Tenaille.Controls;
 using Tenaille.Services;
 using Tenaille.ViewModels;
 using Tenaille.Views;
@@ -12,7 +10,7 @@ namespace Tenaille;
 
 public partial class App : Application
 {
-    public ServiceProvider? Services { get; private set; } = null;
+    private ServiceProvider? Services { get; set; } = null;
 
     public override void Initialize()
     {
@@ -41,8 +39,10 @@ public partial class App : Application
         var collection = new ServiceCollection();
 
         collection.AddSingleton<ILogService, LogService>();
+        collection.AddSingleton<IRendererService, RendererService>();
+        collection.AddTransient<SurfaceViewModel>();
         collection.AddTransient<MainWindowViewModel>();
-        
+
         return collection.BuildServiceProvider();
     }
 }

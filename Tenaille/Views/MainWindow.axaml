@@ -9,7 +9,7 @@
         x:Class="Tenaille.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Bastion">
+        Title="{Binding SurfaceViewModel.Title}">
         
         <Grid>
                 <Grid.ColumnDefinitions>
@@ -23,9 +23,9 @@
                         <RowDefinition Height='*'></RowDefinition>
                         <RowDefinition Height='*'></RowDefinition>
                 </Grid.RowDefinitions>
-                <controls:SurfaceControl x:Name="Surface"
-                                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                         Grid.ColumnSpan="3" Grid.RowSpan="2"/>
-                <views:LogView DataContext="{Binding LogViewModel}" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"  />
+                <views:SurfaceView DataContext="{Binding SurfaceViewModel}" x:Name="Surface"
+                                   HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                   Grid.ColumnSpan="3" Grid.RowSpan="2"/>
+                <views:LogView DataContext="{Binding LogViewModel}" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" />
         </Grid>
 </Window>
