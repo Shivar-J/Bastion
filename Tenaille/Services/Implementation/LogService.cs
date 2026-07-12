@@ -1,9 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
-using Avalonia;
 using Tenaille.Models;
+using Tenaille.Services.Interfaces;
 
-namespace Tenaille.Services;
+namespace Tenaille.Services.Implementation;
 
 public class LogService : ILogService
 {

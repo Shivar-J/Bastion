@@ -1,6 +1,6 @@
 using System;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Tenaille.Services;
+using Tenaille.Services.Interfaces;
 
 namespace Tenaille.ViewModels;
 

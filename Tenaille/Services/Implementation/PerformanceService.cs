@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Tenaille.Services;
+namespace Tenaille.Services.Implementation;
 
 internal class PerformanceService
 {

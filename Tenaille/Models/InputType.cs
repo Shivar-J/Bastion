@@ -6,5 +6,6 @@ public enum InputType : int
     KeyDown = 1,
     KeyUp = 2,
     MouseMove = 3,
-    MouseWheel = 4
+    MouseWheel = 4,
+    MouseButton = 5
 }

@@ -2,7 +2,8 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
-using Tenaille.Services;
+using Tenaille.Services.Implementation;
+using Tenaille.Services.Interfaces;
 using Tenaille.ViewModels;
 using Tenaille.Views;
 

@@ -4,7 +4,7 @@ using Avalonia;
 using Avalonia.Rendering.Composition;
 using Tenaille.Models;
 
-namespace Tenaille.Services;
+namespace Tenaille.Services.Interfaces;
 
 public interface IRendererService : IDisposable
 {

@@ -1,4 +1,4 @@
-﻿using Tenaille.Services;
+﻿using Tenaille.Services.Interfaces;
 
 namespace Tenaille.ViewModels;
 

@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using Tenaille.Models;
 
-namespace Tenaille.Services;
+namespace Tenaille.Services.Interfaces;
 
 public interface ILogService
 {

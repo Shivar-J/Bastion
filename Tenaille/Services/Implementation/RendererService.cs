@@ -8,8 +8,9 @@ using Avalonia.Platform;
 using Avalonia.Rendering.Composition;
 using Avalonia.Threading;
 using Tenaille.Models;
+using Tenaille.Services.Interfaces;
 
-namespace Tenaille.Services;
+namespace Tenaille.Services.Implementation;
 
 public class RendererService : IRendererService
 {
@@ -160,8 +161,14 @@ public class RendererService : IRendererService
         _resizePending = true;
     }
 
-    public void HandleInput(UserInput[] states, uint count) => 
+    public void HandleInput(UserInput[] states, uint count)
+    {
+        foreach (UserInput input in states)
+        {
+            _log.Log(input.ToString(), LogLevel.Info);
+        }
         BastionInterop.HandleUserInput(states, count);
+    }
 
     public async void AttachToVisualTree(Visual visual)
     {
