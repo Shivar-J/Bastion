@@ -63,7 +63,7 @@ public partial class SurfaceView : UserControl
                 WheelX = 0.0f,
                 WheelY = 0.0f
             }
-        ], 1);
+        ]);
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -112,7 +112,7 @@ public partial class SurfaceView : UserControl
             });
         }
         
-        Renderer?.HandleInput(inputs.ToArray(), (uint)inputs.Count);
+        Renderer?.HandleInput(inputs.ToArray());
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
@@ -129,7 +129,7 @@ public partial class SurfaceView : UserControl
                 WheelX = 0.0f,
                 WheelY = 0.0f
             }
-        ], 1);
+        ]);
     }
 
     private void OnKeyUp(object? sender, KeyEventArgs e)
@@ -147,7 +147,7 @@ public partial class SurfaceView : UserControl
                 WheelX = 0.0f,
                 WheelY = 0.0f
             }
-        ], 1);
+        ]);
     }
 
     protected override void OnSizeChanged(SizeChangedEventArgs e)

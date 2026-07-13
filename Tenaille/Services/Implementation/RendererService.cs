@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -33,7 +34,8 @@ public class RendererService : IRendererService
     private CompositionSurfaceVisual? _surfaceVisual;
     private CompositionDrawingSurface? _surface;
     public Action<double>? FpsUpdated { get; set; }
-    
+    private readonly List<UserInput> _inputs = new List<UserInput>();
+
     public RendererService(ILogService log)
     {
         _log = log;
@@ -140,6 +142,11 @@ public class RendererService : IRendererService
             return;
         }
 
+        if (_inputs.Count != 0)
+        {
+            SendInputs();    
+        }
+        
         _anim = (_anim + 1.0f) % 360.0f;
         BastionInterop.Render(_anim);
 
@@ -161,15 +168,21 @@ public class RendererService : IRendererService
         _resizePending = true;
     }
 
-    public void HandleInput(UserInput[] states, uint count)
+    public void HandleInput(UserInput[] states)
     {
         foreach (UserInput input in states)
         {
-            _log.Log(input.ToString(), LogLevel.Info);
+            //_log.Log(input.ToString(), LogLevel.Info);
+            _inputs.Add(input);
         }
-        BastionInterop.HandleUserInput(states, count);
     }
 
+    private void SendInputs()
+    {
+        BastionInterop.HandleUserInput(_inputs.ToArray(), (uint)_inputs.Count);
+        _inputs.Clear();
+    }
+    
     public async void AttachToVisualTree(Visual visual)
     {
         try
