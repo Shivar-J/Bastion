@@ -4,6 +4,7 @@ project(Bastion VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 26)
 
 find_package(Vulkan REQUIRED)
+find_package(glm REQUIRED)
 
 add_library(Bastion SHARED
         Bastion/main.cpp
@@ -28,12 +29,17 @@ add_library(Bastion SHARED
         Bastion/core/inc/scene.h
         Bastion/core/src/engine.cpp
         Bastion/core/inc/engine.h
-        Bastion/core/inc/user_input.h)
+        Bastion/core/inc/user_input.h
+        Bastion/core/src/user_input.cpp
+        Bastion/core/src/camera.cpp
+        Bastion/core/inc/camera.h
+        Bastion/core/inc/input_types.h
+)
 
 add_custom_target(shaders ALL COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/Bastion/shaders/" "$<TARGET_FILE_DIR:Bastion>/shaders")
 
 add_dependencies(Bastion shaders)
 
-target_link_libraries(Bastion Vulkan::Vulkan)
+target_link_libraries(Bastion Vulkan::Vulkan glm::glm)
 

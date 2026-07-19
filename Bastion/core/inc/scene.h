@@ -9,6 +9,8 @@
 #include <vector>
 #include <string>
 #include <fstream>
+
+#include "camera.h"
 #include "pipeline.h"
 
 namespace Bastion
@@ -22,7 +24,7 @@ namespace Bastion
   public:
     void create(vk::raii::Device& device, vk::Format colorFormat,
       const std::string& shaderPath, uint32_t vertexCount);
-    void record(vk::raii::CommandBuffer& cmd, float anim);
+    void record(const vk::raii::CommandBuffer& cmd, uint32_t width, uint32_t height, const Camera& camera);
   };
 
   class Scene
@@ -36,7 +38,7 @@ namespace Bastion
   public:
     void init(vk::raii::Device& device, vk::Format colorFormat, const std::string& assetDir);
     Model& addModel(const std::string& shaderFile, uint32_t vertexCount);
-    void record(vk::raii::CommandBuffer& cmd, uint32_t width, uint32_t height, float anim) const;
+    void record(vk::raii::CommandBuffer& cmd, uint32_t width, uint32_t height, const Camera& camera) const;
     void clear();
   };
 } // Bastion

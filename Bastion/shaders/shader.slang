@@ -4,7 +4,9 @@ struct VertexOutput {
 };
 
 struct PushConstants {
-    float angle;
+    float4x4 model;
+    float4x4 view;
+    float4x4 proj;
 };
 
 [[vk::push_constant]] PushConstants pc;
@@ -12,9 +14,9 @@ struct PushConstants {
 [shader("vertex")]
 VertexOutput vertMain(uint vid : SV_VertexID) {
     float2 positions[3] = {
-        float2(0.0, -0.5),
-        float2(0.5, 0.5),
-        float2(-0.5, 0.5)
+        float2(0.0, -1.5),
+        float2(1.5, 1.5),
+        float2(-1.5, 1.5)
     };
 
     float3 colors[3] = {
@@ -24,13 +26,9 @@ VertexOutput vertMain(uint vid : SV_VertexID) {
     };
 
     float2 p = positions[vid];
-    float s, c;
-    sincos(pc.angle, s, c);
-
-    p = float2(c * p.x - s * p.y, s * p.x + c * p.y);
 
     VertexOutput output;
-    output.sv_position = float4(p, 0.0, 1.0);
+    output.sv_position = mul(pc.proj, mul(pc.view, mul(pc.model, float4(p, 0.0, 1.0))));
     output.color = colors[vid];
     return output;
 }

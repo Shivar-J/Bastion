@@ -42,24 +42,18 @@ namespace Bastion
     return engine().resize(width, height);
   }
 
-  BASTION_API void Render(float anim)
+  BASTION_API void Render()
   {
-    float mouseAnim = std::fmod(g_CurrentMouseX, 360.0f);
-
-    engine().render(mouseAnim);
+    engine().render();
   }
 
   BASTION_API void HandleUserInput(const UserInput* userInput, int32_t count)
   {
     if (!userInput || count <= 0) return;
 
-    for (int32_t i = 0; i < count; ++i)
+    for (int32_t i = 0; i < count; i++)
     {
-      if (userInput[i].type == InputType::MouseMove)
-      {
-        g_CurrentMouseX = userInput[i].mouseX;
-        g_CurrentMouseY = userInput[i].mouseY;
-      }
+      engine().addInput(userInput[i]);
     }
   }
 

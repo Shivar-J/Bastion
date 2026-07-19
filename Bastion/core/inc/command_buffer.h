@@ -26,8 +26,8 @@ namespace Bastion
       vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags2 srcAccessMask,
       vk::AccessFlags2 dstAccessMask, vk::PipelineStageFlags2 srcStageMask, vk::PipelineStageFlags2 dstStageMask) const;
     void create(const vk::raii::Device& device);
-    void record(vk::Extent2D& extent, vk::Image image, vk::raii::ImageView& imageView,
-      Scene& scene, float anim);
+    void record(const vk::Extent2D& extent, vk::Image image, const vk::raii::ImageView& imageView,
+                const Scene& scene, const Camera& camera);
 
   };
 } // Bastion

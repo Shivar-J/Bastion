@@ -25,7 +25,6 @@ public class RendererService : IRendererService
     private PixelSize _nativeSize;
     private bool _resizePending;
     private PixelSize _pendingSize;
-    private float _anim;
 
     private Task? _loop;
     private bool _running;
@@ -147,8 +146,7 @@ public class RendererService : IRendererService
             SendInputs();    
         }
         
-        _anim = (_anim + 1.0f) % 360.0f;
-        BastionInterop.Render(_anim);
+        BastionInterop.Render();
 
         await _surface.UpdateWithSemaphoresAsync(_handles.Image!, 
             _handles.SignalSemaphore!,
@@ -172,7 +170,7 @@ public class RendererService : IRendererService
     {
         foreach (UserInput input in states)
         {
-            //_log.Log(input.ToString(), LogLevel.Info);
+            _log.Log(input.ToString(), LogLevel.Info);
             _inputs.Add(input);
         }
     }

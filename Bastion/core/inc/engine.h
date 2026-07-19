@@ -5,12 +5,14 @@
 #ifndef BASTION_ENGINE_H
 #define BASTION_ENGINE_H
 
+#include "camera.h"
 #include "instance.h"
 #include "device.h"
 #include "swapchain.h"
 #include "command_buffer.h"
 #include "sync.h"
 #include "scene.h"
+#include "user_input.h"
 
 namespace Bastion
 {
@@ -23,6 +25,8 @@ namespace Bastion
     CommandBuffer commandBuffer;
     Sync sync;
     Scene scene;
+    Camera camera;
+    Input input;
 
     uint32_t width = 0;
     uint32_t height = 0;
@@ -35,8 +39,9 @@ namespace Bastion
   public:
     bool init(const uint8_t* idBytes, uint32_t idLen, bool isLuid);
     bool resize(uint32_t newWidth, uint32_t newHeight);
-    void render(float anim);
+    void render();
     void shutdown();
+    void addInput(const UserInput& _input);
 
     [[nodiscard]] Scene& getScene();
 

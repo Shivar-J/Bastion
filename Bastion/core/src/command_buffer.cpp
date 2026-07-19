@@ -65,8 +65,8 @@ namespace Bastion
     commandBuffer = std::move(vk::raii::CommandBuffers(device, allocInfo).front());
   }
 
-  void CommandBuffer::record(vk::Extent2D& extent, vk::Image image,
-                             vk::raii::ImageView& imageView, Scene& scene, float anim)
+  void CommandBuffer::record(const vk::Extent2D& extent, const vk::Image image,
+                             const vk::raii::ImageView& imageView, const Scene& scene, const Camera& camera)
   {
     commandBuffer.begin({});
 
@@ -89,7 +89,7 @@ namespace Bastion
       clearColor
     );
 
-    vk::RenderingInfo renderingInfo(
+    const vk::RenderingInfo renderingInfo(
       {},
       vk::Rect2D(
         {0, 0},
@@ -104,7 +104,7 @@ namespace Bastion
     commandBuffer.setViewport(0, vk::Viewport(0.0f, 0.0f,
       static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f));
     commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
-    scene.record(commandBuffer, extent.width, extent.height, anim);
+    scene.record(commandBuffer, extent.width, extent.height, camera);
     commandBuffer.endRendering();
 
     transitionImageLayout(image,

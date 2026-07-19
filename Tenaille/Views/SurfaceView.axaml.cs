@@ -13,6 +13,7 @@ namespace Tenaille.Views;
 public partial class SurfaceView : UserControl
 { 
     private IRendererService? Renderer => (DataContext as SurfaceViewModel)?.Renderer;
+    private Point? _lastPosition;
     
     public SurfaceView()
     {
@@ -45,12 +46,22 @@ public partial class SurfaceView : UserControl
         topLevel.KeyDown -= OnKeyDown;
         topLevel.KeyUp -= OnKeyUp;
         topLevel.PointerPressed -= OnPointerPressed;
+
+        _lastPosition = null;
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
         Point position = e.GetPosition(this);
+        if (_lastPosition is not Point prev)
+        {
+            _lastPosition = position;
+            return;
+        }
+
+        Vector delta = position - prev;
+        _lastPosition = position;
         
         Renderer?.HandleInput([
             new UserInput

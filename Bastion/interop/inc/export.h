@@ -16,9 +16,6 @@
 
 namespace Bastion
 {
-  float g_CurrentMouseX = 0.0f;
-  float g_CurrentMouseY = 0.0f;
-
 #pragma pack(push, 1)
   typedef struct SharedFrame
   {
@@ -37,7 +34,7 @@ namespace Bastion
   BASTION_API bool PreInitWithId(const uint8_t* idBytes, uint32_t idLen, bool isLuid);
   BASTION_API bool AddModel(const char* shaderFile, uint32_t vertexCount);
   BASTION_API bool Resize(uint32_t width, uint32_t height);
-  BASTION_API void Render(float anim);
+  BASTION_API void Render();
   BASTION_API void HandleUserInput(const UserInput* userInput, int32_t count);
   BASTION_API void GetSharedFrame(SharedFrame* out);
   BASTION_API void Shutdown();

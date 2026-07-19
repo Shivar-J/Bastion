@@ -119,12 +119,13 @@ namespace Bastion
     }
   }
 
-  void Engine::render(float anim)
+  void Engine::render()
   {
     if (!initialized) return;
 
+    input.process(camera);
     commandBuffer.record(swapchain.getExtent(), *swapchain.getImage(),
-      swapchain.getImageView(), scene, anim);
+                         swapchain.getImageView(), scene, camera);
 
     device.getDevice().resetFences(*sync.getFence());
 
@@ -156,6 +157,11 @@ namespace Bastion
     scene.clear();
     sync.cleanup();
     initialized = false;
+  }
+
+  void Engine::addInput(const UserInput& _input)
+  {
+    input.add(_input);
   }
 
   int64_t Engine::getMemoryHandle() const

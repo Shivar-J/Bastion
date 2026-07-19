@@ -24,7 +24,7 @@ public static partial class BastionInterop
     internal static partial bool Resize(uint w, uint h);
 
     [LibraryImport(Dll, EntryPoint = "Render")]
-    internal static partial void Render(float anim);
+    internal static partial void Render();
     
     [LibraryImport(Dll, EntryPoint = "HandleUserInput")]
     internal static partial void HandleUserInput([In] UserInput[] inputs, uint count);
