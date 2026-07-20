@@ -4,32 +4,73 @@ struct VertexOutput {
 };
 
 struct PushConstants {
-    float4x4 model;
-    float4x4 view;
-    float4x4 proj;
+    column_major float4x4 model;
+    column_major float4x4 view;
+    column_major float4x4 proj;
 };
 
 [[vk::push_constant]] PushConstants pc;
 
 [shader("vertex")]
 VertexOutput vertMain(uint vid : SV_VertexID) {
-    float2 positions[3] = {
-        float2(0.0, -1.5),
-        float2(1.5, 1.5),
-        float2(-1.5, 1.5)
-    };
+    float3 positions[36] = {
+      float3(-0.5, -0.5,  0.5),
+      float3( 0.5, -0.5,  0.5),
+      float3( 0.5,  0.5,  0.5),
+      float3(-0.5, -0.5,  0.5),
+      float3( 0.5,  0.5,  0.5),
+      float3(-0.5,  0.5,  0.5),
 
-    float3 colors[3] = {
-        float3(1.0, 1.0, 1.0),
-        float3(1.0, 1.0, 1.0),
-        float3(1.0, 1.0, 1.0)
-    };
+      float3( 0.5, -0.5, -0.5),
+      float3(-0.5, -0.5, -0.5),
+      float3(-0.5,  0.5, -0.5),
+      float3( 0.5, -0.5, -0.5),
+      float3(-0.5,  0.5, -0.5),
+      float3( 0.5,  0.5, -0.5),
 
-    float2 p = positions[vid];
+      float3(-0.5, -0.5, -0.5),
+      float3(-0.5, -0.5,  0.5),
+      float3(-0.5,  0.5,  0.5),
+      float3(-0.5, -0.5, -0.5),
+      float3(-0.5,  0.5,  0.5),
+      float3(-0.5,  0.5, -0.5),
+
+      float3(0.5, -0.5,  0.5),
+      float3(0.5, -0.5, -0.5),
+      float3(0.5,  0.5, -0.5),
+      float3(0.5, -0.5,  0.5),
+      float3(0.5,  0.5, -0.5),
+      float3(0.5,  0.5,  0.5),
+
+      float3(-0.5, 0.5,  0.5),
+      float3( 0.5, 0.5,  0.5),
+      float3( 0.5, 0.5, -0.5),
+      float3(-0.5, 0.5,  0.5),
+      float3( 0.5, 0.5, -0.5),
+      float3(-0.5, 0.5, -0.5),
+
+      float3(-0.5, -0.5, -0.5),
+      float3( 0.5, -0.5, -0.5),
+      float3( 0.5, -0.5,  0.5),
+      float3(-0.5, -0.5, -0.5),
+      float3( 0.5, -0.5,  0.5),
+      float3(-0.5, -0.5,  0.5)
+   };
+
+  float3 faceColors[6] = {
+      float3(1.0, 0.15, 0.15),
+      float3(0.15, 1.0, 0.15),
+      float3(0.15, 0.35, 1.0),
+      float3(1.0, 0.85, 0.15),
+      float3(1.0, 0.15, 1.0),
+      float3(0.15, 1.0, 1.0)
+   };
 
     VertexOutput output;
-    output.sv_position = mul(pc.proj, mul(pc.view, mul(pc.model, float4(p, 0.0, 1.0))));
-    output.color = colors[vid];
+    float4 worldPosition = mul(pc.model, float4(positions[vid], 1.0));
+    float4 viewPosition = mul(pc.view, worldPosition);
+    output.sv_position = mul(pc.proj, viewPosition);
+    output.color = faceColors[vid / 6];
     return output;
 }
 

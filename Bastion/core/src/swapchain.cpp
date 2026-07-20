@@ -35,6 +35,21 @@ namespace Bastion
     return imageView;
   }
 
+  vk::raii::Image& Swapchain::getDepthImage()
+  {
+    return depthImage;
+  }
+
+  vk::raii::ImageView& Swapchain::getDepthImageView()
+  {
+    return depthImageView;
+  }
+
+  vk::Format Swapchain::getDepthFormat() const
+  {
+    return depthFormat;
+  }
+
   uint64_t Swapchain::getMemorySize() const
   {
     return memorySize;
@@ -112,5 +127,53 @@ namespace Bastion
       vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
     );
     imageView = vk::raii::ImageView(device.getDevice(), viewInfo);
+
+    vk::ImageCreateInfo depthImageInfo(
+      {},
+      vk::ImageType::e2D,
+      depthFormat,
+      vk::Extent3D(width, height, 1),
+      1, 1,
+      vk::SampleCountFlagBits::e1,
+      vk::ImageTiling::eOptimal,
+      vk::ImageUsageFlagBits::eDepthStencilAttachment,
+      vk::SharingMode::eExclusive
+      );
+
+    depthImage = vk::raii::Image(device.getDevice(), depthImageInfo);
+    const vk::MemoryRequirements depthRequirements = depthImage.getMemoryRequirements();
+
+    uint32_t depthMemoryTypeIndex = ~0u;
+    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+    {
+      if ((depthRequirements.memoryTypeBits & (1u << i)) &&
+        (memoryProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal))
+      {
+        depthMemoryTypeIndex = i;
+        break;
+      }
+    }
+
+    if (depthMemoryTypeIndex == ~0u)
+    {
+      throw std::runtime_error("Failed to find suitable memory type");
+    }
+
+    depthMemory = vk::raii::DeviceMemory(device.getDevice(),
+      vk::MemoryAllocateInfo(depthRequirements.size, depthMemoryTypeIndex));
+    depthImage.bindMemory(*depthMemory, 0);
+
+    vk::ImageViewCreateInfo depthViewInfo(
+      {},
+      *depthImage,
+      vk::ImageViewType::e2D,
+      depthFormat,
+      {},
+      vk::ImageSubresourceRange(
+        vk::ImageAspectFlagBits::eDepth,
+        0, 1, 0, 1
+      )
+    );
+    depthImageView = vk::raii::ImageView(device.getDevice(), depthViewInfo);
   }
 } // Bastion

@@ -24,7 +24,7 @@ namespace Bastion
     [[nodiscard]] std::string getShaderPath();
 
     void setShaderPath(const std::string& path);
-    void createPipeline(vk::raii::Device& device, vk::Format colorFormat);
+    void createPipeline(vk::raii::Device& device, vk::Format colorFormat, vk::Format depthFormat = vk::Format::eD32Sfloat);
   };
 } // Bastion
 

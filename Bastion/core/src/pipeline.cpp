@@ -54,7 +54,7 @@ namespace Bastion
     shaderPath = path;
   }
 
-  void Pipeline::createPipeline(vk::raii::Device& device, vk::Format colorFormat)
+  void Pipeline::createPipeline(vk::raii::Device& device, vk::Format colorFormat, vk::Format depthFormat)
   {
     vk::raii::ShaderModule module = createShaderModule(device, readFile(shaderPath));
 
@@ -92,7 +92,7 @@ namespace Bastion
     vk::PipelineRasterizationStateCreateInfo rasterizerState(
       {}, vk::False, vk::False,
       vk::PolygonMode::eFill,
-      vk::CullModeFlagBits::eBack,
+      vk::CullModeFlagBits::eNone,
       vk::FrontFace::eClockwise,
       vk::False,
       {}, {}, 1.0f, 1.0f,
@@ -101,6 +101,14 @@ namespace Bastion
     vk::PipelineMultisampleStateCreateInfo multisampleState(
       {},
       vk::SampleCountFlagBits::e1,
+      vk::False
+    );
+    vk::PipelineDepthStencilStateCreateInfo depthStencilState(
+      {},
+      vk::True,
+      vk::True,
+      vk::CompareOp::eLess,
+      vk::False,
       vk::False
     );
     vk::PipelineColorBlendAttachmentState colorBlendAttachment(
@@ -138,7 +146,8 @@ namespace Bastion
 
     vk::PipelineRenderingCreateInfo pipelineRendering(
       0, 1,
-      &colorFormat
+      &colorFormat,
+      depthFormat
     );
 
     vk::GraphicsPipelineCreateInfo pipelineCreateInfo(
@@ -150,7 +159,7 @@ namespace Bastion
       &viewportState,
       &rasterizerState,
       &multisampleState,
-      nullptr,
+      &depthStencilState,
       &blendState,
       &dynamicState,
       *pipelineLayout,

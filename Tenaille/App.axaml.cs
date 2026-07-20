@@ -41,6 +41,8 @@ public partial class App : Application
 
         collection.AddSingleton<ILogService, LogService>();
         collection.AddSingleton<IRendererService, RendererService>();
+        collection.AddSingleton<ICursorLockService>(_ => CursorLockServiceFactory.Create());        
+        
         collection.AddTransient<SurfaceViewModel>();
         collection.AddTransient<MainWindowViewModel>();
 

@@ -65,8 +65,9 @@ namespace Bastion
     commandBuffer = std::move(vk::raii::CommandBuffers(device, allocInfo).front());
   }
 
-  void CommandBuffer::record(const vk::Extent2D& extent, const vk::Image image,
-                             const vk::raii::ImageView& imageView, const Scene& scene, const Camera& camera)
+  void CommandBuffer::record(const vk::Extent2D& extent, const vk::Image image, const vk::raii::ImageView& imageView,
+                             vk::Image depthImage, const vk::raii::ImageView& depthImageView,
+                             const Scene& scene, const Camera& camera)
   {
     commandBuffer.begin({});
 
@@ -79,6 +80,24 @@ namespace Bastion
       vk::PipelineStageFlagBits2::eColorAttachmentOutput
       );
 
+    vk::ImageMemoryBarrier2 depthBarrier(
+      vk::PipelineStageFlagBits2::eTopOfPipe,
+      {},
+      vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+      vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+      vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eDepthAttachmentOptimal,
+      vk::QueueFamilyIgnored,
+      vk::QueueFamilyIgnored,
+      depthImage,
+      vk::ImageSubresourceRange(
+        vk::ImageAspectFlagBits::eDepth,
+        0, 1, 0, 1
+        )
+      );
+
+    commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, depthBarrier));
+
     vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
     vk::RenderingAttachmentInfo attachmentInfo(
       imageView,
@@ -89,6 +108,15 @@ namespace Bastion
       clearColor
     );
 
+    vk::ClearValue depthClear = vk::ClearDepthStencilValue(1.0f, 0);
+    vk::RenderingAttachmentInfo depthAttachmentInfo(
+      depthImageView,
+      vk::ImageLayout::eDepthAttachmentOptimal,
+      {}, {}, {},
+      vk::AttachmentLoadOp::eClear,
+      vk::AttachmentStoreOp::eDontCare,
+      depthClear
+    );
     const vk::RenderingInfo renderingInfo(
       {},
       vk::Rect2D(
@@ -97,7 +125,8 @@ namespace Bastion
       ),
       1, 0, 1,
       &attachmentInfo,
-      nullptr, nullptr
+      &depthAttachmentInfo,
+      nullptr
     );
 
     commandBuffer.beginRendering(renderingInfo);

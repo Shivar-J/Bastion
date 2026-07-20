@@ -42,4 +42,6 @@ add_custom_target(shaders ALL COMMAND ${CMAKE_COMMAND} -E copy_directory
 add_dependencies(Bastion shaders)
 
 target_link_libraries(Bastion Vulkan::Vulkan glm::glm)
-
+target_compile_definitions(Bastion PRIVATE
+        GLM_FORCE_DEPTH_ZERO_TO_ONE
+        GLM_FORCE_RADIANS)

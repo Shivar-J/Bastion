@@ -16,7 +16,11 @@ namespace Bastion
     vk::raii::Image image = nullptr;
     vk::raii::DeviceMemory memory = nullptr;
     vk::raii::ImageView imageView = nullptr;
+    vk::raii::Image depthImage = nullptr;
+    vk::raii::DeviceMemory depthMemory = nullptr;
+    vk::raii::ImageView depthImageView = nullptr;
     vk::Format format = vk::Format::eR8G8B8A8Unorm;
+    vk::Format depthFormat = vk::Format::eD32Sfloat;
     vk::Extent2D extent;
     uint64_t memorySize = 0;
     int64_t memoryHandle = 0;
@@ -26,6 +30,9 @@ namespace Bastion
     [[nodiscard]] vk::Extent2D& getExtent();
     [[nodiscard]] vk::raii::Image& getImage();
     [[nodiscard]] vk::raii::ImageView& getImageView();
+    [[nodiscard]] vk::raii::Image& getDepthImage();
+    [[nodiscard]] vk::raii::ImageView& getDepthImageView();
+    [[nodiscard]] vk::Format getDepthFormat() const;
     [[nodiscard]] uint64_t getMemorySize() const;
     [[nodiscard]] int64_t getMemoryHandle() const;
 

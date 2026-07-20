@@ -131,9 +131,9 @@ namespace Bastion
 
   void Camera::update()
   {
-    const glm::quat x = glm::angleAxis(glm::radians(-angle[0]), glm::vec3(0, 1, 0));
-    const glm::quat y = glm::angleAxis(glm::radians(angle[1]), glm::vec3(1, 0, 0));
+    const glm::quat yaw = glm::angleAxis(glm::radians(-angle[0]), glm::vec3(0.0f, 1.0f, 0.0f));
+    const glm::quat pitch = glm::angleAxis(glm::radians(angle[1]), glm::vec3(1.0f, 0.0f, 0.0f));
 
-    orientation = glm::normalize(x * y);
+    orientation = glm::normalize(yaw * pitch);
   }
 } // Bastion

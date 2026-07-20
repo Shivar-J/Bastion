@@ -13,6 +13,7 @@ namespace Tenaille.Views;
 public partial class SurfaceView : UserControl
 { 
     private IRendererService? Renderer => (DataContext as SurfaceViewModel)?.Renderer;
+    private ICursorLockService? CursorLock => (DataContext as SurfaceViewModel)?.CursorLock;
     private Point? _lastPosition;
     
     public SurfaceView()
@@ -39,6 +40,7 @@ public partial class SurfaceView : UserControl
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        CursorLock?.Unlock();
         base.OnDetachedFromVisualTree(e);
         Renderer?.DetachFromVisualTree(this);
         
@@ -53,15 +55,23 @@ public partial class SurfaceView : UserControl
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        Point position = e.GetPosition(this);
-        if (_lastPosition is not Point prev)
+
+        ICursorLockService? cursorLock = CursorLock;
+        if (cursorLock is not { IsLocked: true })
         {
-            _lastPosition = position;
+            return;
+        }
+        
+        Point position = e.GetPosition(this);
+        Point center = new (Bounds.Width / 2, Bounds.Height / 2);
+        Vector delta = position - center;
+
+        if (delta.SquaredLength < 0.01)
+        {
             return;
         }
 
-        Vector delta = position - prev;
-        _lastPosition = position;
+        cursorLock.CenterPointer();
         
         Renderer?.HandleInput([
             new UserInput
@@ -69,8 +79,8 @@ public partial class SurfaceView : UserControl
                 Type = InputType.MouseMove,
                 KeyCode = Key.None,
                 MouseCode = MouseKey.None,
-                MouseX = (float)position.X,
-                MouseY = (float)position.Y,
+                MouseX = (float)delta.X,
+                MouseY = (float)delta.Y,
                 WheelX = 0.0f,
                 WheelY = 0.0f
             }
@@ -81,8 +91,15 @@ public partial class SurfaceView : UserControl
     {
         List<UserInput> inputs = new List<UserInput>();
         var point = e.GetCurrentPoint(sender as Control);
-        var x = point.Position.X;
-        var y = point.Position.Y;
+        Point position = e.GetPosition(this);
+        if (_lastPosition is not Point prev)
+        {
+            _lastPosition = position;
+            return;
+        }
+
+        Vector delta = position - prev;
+        _lastPosition = position;
         if (point.Properties.IsLeftButtonPressed)
         {
             inputs.Add(new UserInput
@@ -90,8 +107,8 @@ public partial class SurfaceView : UserControl
                 Type = InputType.MouseButton,
                 KeyCode = Key.None,
                 MouseCode = MouseKey.LeftMouseDown,
-                MouseX = (float)x,
-                MouseY = (float)y,
+                MouseX = (float)delta.X,
+                MouseY = (float)delta.Y,
                 WheelX = 0.0f,
                 WheelY = 0.0f
             });
@@ -103,8 +120,8 @@ public partial class SurfaceView : UserControl
                 Type = InputType.MouseButton,
                 KeyCode = Key.None,
                 MouseCode = MouseKey.RightMouseDown,
-                MouseX = (float)x,
-                MouseY = (float)y,
+                MouseX = (float)delta.X,
+                MouseY = (float)delta.Y,
                 WheelX = 0.0f,
                 WheelY = 0.0f
             });
@@ -116,8 +133,8 @@ public partial class SurfaceView : UserControl
                 Type = InputType.MouseButton,
                 KeyCode = Key.None,
                 MouseCode = MouseKey.MiddleMouseDown,
-                MouseX = (float)x,
-                MouseY = (float)y,
+                MouseX = (float)delta.X,
+                MouseY = (float)delta.Y,
                 WheelX = 0.0f,
                 WheelY = 0.0f
             });
@@ -128,23 +145,52 @@ public partial class SurfaceView : UserControl
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        Key keyDown = e.Key;
-
-        Renderer?.HandleInput([
-            new UserInput
+        switch (e.Key)
+        {
+            case Key.Escape:
+                CursorLock?.Unlock();
+                e.Handled = true;
+                return;
+            case Key.OemTilde:
             {
-                Type = InputType.KeyDown,
-                KeyCode = keyDown,
-                MouseX = 0.0f,
-                MouseY = 0.0f,
-                WheelX = 0.0f,
-                WheelY = 0.0f
+                if (CursorLock is { IsLocked: false } cursorLock)
+                {
+                    Focus();
+                    _lastPosition = null;
+                    cursorLock.Lock(this);
+                }
+            
+                e.Handled = true;
+                return;
             }
-        ]);
+            default:
+            {
+                Key keyDown = e.Key;
+
+                Renderer?.HandleInput([
+                    new UserInput
+                    {
+                        Type = InputType.KeyDown,
+                        KeyCode = keyDown,
+                        MouseX = 0.0f,
+                        MouseY = 0.0f,
+                        WheelX = 0.0f,
+                        WheelY = 0.0f
+                    }
+                ]);
+                break;
+            }
+        }
     }
 
     private void OnKeyUp(object? sender, KeyEventArgs e)
     {
+        if (e.Key is Key.Escape or Key.OemTilde)
+        {
+            e.Handled = true;
+            return;
+        }
+        
         Key keyUp = e.Key;
 
         Renderer?.HandleInput([
@@ -168,5 +214,16 @@ public partial class SurfaceView : UserControl
         var px = PixelSize.FromSize(e.NewSize, scaling);
         if (px.Width <= 0 || px.Height <= 0) return;
         Renderer?.RequestResize(px);
+
+        if (CursorLock is { IsLocked: false } cursorLock)
+        {
+            cursorLock.CenterPointer();
+        }
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        CursorLock?.Unlock();
     }
 }

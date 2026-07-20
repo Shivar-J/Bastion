@@ -91,7 +91,7 @@ public class RendererService : IRendererService
             return false;
         }
         
-        if (!BastionInterop.AddModel("slang.spv", 3))
+        if (!BastionInterop.AddModel("slang.spv", 36))
         {
             _log.Log("AddModel failed " + BastionInterop.LastError(), LogLevel.Error);
             return false;
@@ -170,7 +170,7 @@ public class RendererService : IRendererService
     {
         foreach (UserInput input in states)
         {
-            _log.Log(input.ToString(), LogLevel.Info);
+            //_log.Log(input.ToString(), LogLevel.Info);
             _inputs.Add(input);
         }
     }

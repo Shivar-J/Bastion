@@ -124,9 +124,9 @@ namespace Bastion
     if (!initialized) return;
 
     input.process(camera);
-    commandBuffer.record(swapchain.getExtent(), *swapchain.getImage(),
-                         swapchain.getImageView(), scene, camera);
-
+    commandBuffer.record(swapchain.getExtent(), *swapchain.getImage(), swapchain.getImageView(),
+      *swapchain.getDepthImage(), swapchain.getDepthImageView(), scene, camera);
+  
     device.getDevice().resetFences(*sync.getFence());
 
     vk::PipelineStageFlags waitStage(vk::PipelineStageFlagBits::eColorAttachmentOutput);

@@ -7,13 +7,15 @@ namespace Tenaille.ViewModels;
 public partial class SurfaceViewModel : ViewModelBase, IDisposable
 {
     [ObservableProperty] private IRendererService _renderer;
+    public ICursorLockService CursorLock { get; }
 
     [ObservableProperty] private double _fps;
     [ObservableProperty] private string _title = "Bastion";
     
-    public SurfaceViewModel(IRendererService renderer)
+    public SurfaceViewModel(IRendererService renderer, ICursorLockService cursorLock)
     {
         _renderer = renderer;
+        CursorLock = cursorLock;
         _renderer.FpsUpdated += OnFpsUpdated;
     }
 
